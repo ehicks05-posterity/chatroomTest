@@ -1,70 +1,104 @@
 package com.steven.hicks;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
-import java.util.Scanner;
+import java.util.HashSet;
 
-public class ChatServer implements Runnable
+public class ChatServer
 {
-    public ServerSocket chatServer;
-    public Thread thread;
+    private static final int PORT = 8585;
 
-    public ChatServer(int port) throws IOException
+    private static HashSet<String> names = new HashSet<String>();
+    private static HashSet<PrintWriter> writers = new HashSet<PrintWriter>();
+
+    public static void main(String[] args) throws Exception
     {
-        chatServer = new ServerSocket(port);
-        chatServer.setSoTimeout(10000);
+        System.out.println("Chat server is running");
+        ServerSocket listener = new ServerSocket(PORT);
+        try
+        {
+            while (true)
+                new Handler(listener.accept()).start();
+        }
+        finally
+        {
+            listener.close();
+        }
     }
 
-    public void run()
+    private static class Handler extends Thread
     {
-        while (true)
+        private String name;
+        private Socket socket;
+        private BufferedReader in;
+        private PrintWriter out;
+
+        public Handler(Socket socket)
+        {
+            this.socket = socket;
+        }
+
+        public void run()
         {
             try
             {
-                Socket server = chatServer.accept();
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                out = new PrintWriter(socket.getOutputStream(), true);
 
-                Scanner in = new Scanner(server.getInputStream());
-                PrintWriter out = new PrintWriter(server.getOutputStream(), true);
-
-                out.println("Enter a message");
-                boolean done = false;
-                while (!done && in.hasNextLine())
+                while (true)
                 {
-                    String line = in.nextLine();
-
-                    out.println("echo"  + line);
-                    System.out.println(server.getRemoteSocketAddress() + " entered " + line);
-
-                    if (line.equals("exit"))
-                        done = true;
+                    out.println("Screen name");
+                    name = in.readLine();
+                    if (name == null)
+                    {
+                        return;
+                    }
+                    synchronized (names)
+                    {
+                        if (!names.contains(name))
+                        {
+                            names.add(name);
+                            break;
+                        }
+                    }
                 }
 
-                System.out.println("goobye");
+                out.println("Name accepted");
+                writers.add(out);
 
-                server.close();
-            }
-            catch (SocketTimeoutException e)
+                while (true)
+                {
+                    String input = in.readLine();
+                    if (input == null)
+                        return;
+                    for (PrintWriter writer : writers)
+                        writer.println("Message " + name + ": " + input);
+                }
+
+            } catch (IOException e)
             {
-                e.printStackTrace();
+                System.out.println(e);
             }
-            catch (IOException e)
+            finally
             {
-                e.printStackTrace();
-                break;
+                if (name != null)
+                    names.remove(name);
+                if (out != null)
+                    writers.remove(out);
+
+                try
+                {
+                    socket.close();
+                }
+                catch (IOException e)
+                {
+
+                }
             }
         }
     }
-
-    public void start()
-    {
-        if (thread == null)
-        {
-            thread = new Thread(this);
-            thread.start();
-        }
-    }
-
 }

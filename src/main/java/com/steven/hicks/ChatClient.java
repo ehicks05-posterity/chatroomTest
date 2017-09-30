@@ -1,46 +1,83 @@
 package com.steven.hicks;
 
-import java.io.*;
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class ChatClient
 {
-//    public static void main(String[] args)
-//    {
-    public void chat()
+    BufferedReader in;
+    PrintWriter out;
+    JFrame frame = new JFrame("Chatter");
+    JTextField textField = new JTextField(40);
+    JTextArea messageArea = new JTextArea(8, 40);
+
+    public ChatClient()
     {
-        try
+        textField.setEditable(false);
+        messageArea.setEditable(false);
+        frame.getContentPane().add(textField, "North");
+        frame.getContentPane().add(new JScrollPane(messageArea), "Center");
+        frame.pack();
+
+        textField.addActionListener(new ActionListener()
         {
-            Scanner chat = new Scanner(System.in);
-            String serverName = "127.0.0.1";
-            int serverPort = 8585;
-
-            System.out.println("Connecting to " + serverName + " on port " + serverPort);
-            Socket server = new Socket(serverName, serverPort);
-
-            OutputStream outToServer = server.getOutputStream();
-            PrintWriter toServer = new PrintWriter(outToServer, true);
-
-            InputStream inFromServer = server.getInputStream();
-            Scanner fromServer = new Scanner(inFromServer);
-
-            while (fromServer.hasNext())
+            public void actionPerformed(ActionEvent e)
             {
-                System.out.println(fromServer.nextLine());
-
-                String message = chat.nextLine();
-
-                if (message.length() > 0)
-                    toServer.println(message);
+                out.println(textField.getText());
+                textField.setText("");
             }
+        });
 
-            server.close();
-        } catch (IOException e)
+    }
+
+    private String getServerAddress()
+    {
+        return JOptionPane.showInputDialog(frame, "enter IP Address of the Server:", "Welcome to the chatter", JOptionPane.QUESTION_MESSAGE);
+    }
+
+    private String getName()
+    {
+        return JOptionPane.showInputDialog(
+                frame,
+                "Choose a screen name:",
+                "Scren name selection",
+                JOptionPane.PLAIN_MESSAGE
+        );
+    }
+
+    private void run() throws IOException
+    {
+        String serverAddress = getServerAddress();
+        Socket socket = new Socket(serverAddress, 8585);
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        out = new PrintWriter(socket.getOutputStream(), true);
+
+        while(true)
         {
-            e.printStackTrace();
+            String line = in.readLine();
+            if (line.startsWith("Screen name"))
+                out.println(getName());
+            else if (line.startsWith("Name accepted"))
+                textField.setEditable(true);
+            else if (line.startsWith("Message"))
+                messageArea.append(line.substring(8) + "\n");
+
         }
     }
-//    }
+
+    public static void main(String[] args) throws Exception
+    {
+        ChatClient client = new ChatClient();
+        client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        client.frame.setVisible(true);
+        client.run();
+    }
+
 
 }
