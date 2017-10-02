@@ -1,5 +1,6 @@
 package com.steven.hicks;
 
+import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,19 +11,47 @@ import java.util.HashSet;
 
 public class ChatServer
 {
-    private static final int PORT = 8585;
+    JFrame frame = new JFrame("ChatterServer");
+    JTextField jTextField = new JTextField(40);
+    JTextArea messageArea = new JTextArea(8, 40);
+
+    private static int PORT;
 
     private static HashSet<String> names = new HashSet<String>();
     private static HashSet<PrintWriter> writers = new HashSet<PrintWriter>();
 
+    public ChatServer()
+    {
+        jTextField.setEditable(false);
+        messageArea.setEditable(false);
+        frame.getContentPane().add(jTextField, "North");
+        frame.getContentPane().add(new JScrollPane(messageArea), "Center");
+        frame.pack();
+    }
+
+    public String getPORT()
+    {
+        return JOptionPane.showInputDialog(frame,
+                "Choose a port for the server to run on.",
+                JOptionPane.PLAIN_MESSAGE);
+    }
+
     public static void main(String[] args) throws Exception
     {
+        ChatServer server = new ChatServer();
+        server.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        server.frame.setVisible(true);
+
+        PORT = Integer.valueOf(server.getPORT());
+
+        server.jTextField.setText("Chat server is running on port " + PORT);
+
         System.out.println("Chat server is running");
         ServerSocket listener = new ServerSocket(PORT);
         try
         {
             while (true)
-                new Handler(listener.accept()).start();
+                new Handler(listener.accept(), server.messageArea).start();
         }
         finally
         {
@@ -36,10 +65,12 @@ public class ChatServer
         private Socket socket;
         private BufferedReader in;
         private PrintWriter out;
+        private JTextArea textArea;
 
-        public Handler(Socket socket)
+        public Handler(Socket socket, JTextArea messageArea)
         {
             this.socket = socket;
+            textArea = messageArea;
         }
 
         public void run()
@@ -77,6 +108,7 @@ public class ChatServer
                         return;
                     for (PrintWriter writer : writers)
                         writer.println("Message " + name + ": " + input);
+                    textArea.append("Message " + name + ": " + input + "\r\n");
                 }
 
             } catch (IOException e)
