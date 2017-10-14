@@ -16,6 +16,7 @@ public class ChatServer
     JTextArea messageArea = new JTextArea(8, 40);
 
     private static int PORT;
+    private static String serverName;
 
     private static HashSet<String> names = new HashSet<String>();
     private static HashSet<PrintWriter> writers = new HashSet<PrintWriter>();
@@ -36,6 +37,15 @@ public class ChatServer
                 JOptionPane.PLAIN_MESSAGE);
     }
 
+    public String getName()
+    {
+        String serverName =  JOptionPane.showInputDialog(frame,
+                "Choose a name for the server.",
+                JOptionPane.PLAIN_MESSAGE);
+
+        return serverName.length() > 0 ? serverName : "SteveChat";
+    }
+
     public static void main(String[] args) throws Exception
     {
         ChatServer server = new ChatServer();
@@ -43,6 +53,7 @@ public class ChatServer
         server.frame.setVisible(true);
 
         PORT = Integer.valueOf(server.getPORT());
+        serverName = server.getName();
 
         server.jTextField.setText("Chat server is running on port " + PORT);
 
@@ -100,6 +111,10 @@ public class ChatServer
 
                 out.println("Name accepted");
                 writers.add(out);
+
+                for (PrintWriter writer : writers)
+                    writer.println("Message " + name + ": " + "Welcome to " + serverName + "!");
+                textArea.append("Message " + name + ": " + "Welcome to " + serverName + "!" + "\r\n");
 
                 while (true)
                 {
