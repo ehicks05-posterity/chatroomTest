@@ -34,16 +34,14 @@ public class ChatServer
     {
         return JOptionPane.showInputDialog(frame,
                 "Choose a port for the server to run on.",
-                JOptionPane.PLAIN_MESSAGE);
+                "8585");
     }
 
     public String getName()
     {
-        String serverName =  JOptionPane.showInputDialog(frame,
+        return JOptionPane.showInputDialog(frame,
                 "Choose a name for the server.",
-                JOptionPane.PLAIN_MESSAGE);
-
-        return serverName.length() > 0 ? serverName : "SteveChat";
+                "SteveChat");
     }
 
     public static void main(String[] args) throws Exception
