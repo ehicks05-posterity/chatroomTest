@@ -114,6 +114,13 @@ public class ChatServer
                     writer.println("Message " + name + ": " + "Welcome to " + serverName + "!");
                 textArea.append("Message " + name + ": " + "Welcome to " + serverName + "!" + "\r\n");
 
+                if (name.equalsIgnoreCase("eric") || name.equalsIgnoreCase("steve"))
+                {
+                    for (PrintWriter writer : writers)
+                        writer.println("Message " + name + ": Wow that's a really good name!");
+                    textArea.append("Message " + name + ": Wow that's a really good name!\r\n");
+                }
+
                 while (true)
                 {
                     String input = in.readLine();
